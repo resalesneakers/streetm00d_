@@ -449,6 +449,30 @@
                 console.log('✅ Mapeamento de imagens inicializado:', Object.keys(this.mapping).length, 'imagens');
             },
             
+            // Try to find image by product name (for new images added to folder)
+            findImageByName: function(productName) {
+                // Normalize product name
+                const normalizedProduct = this.normalize(productName);
+                
+                // Try exact match first
+                for (const [imgName, path] of Object.entries(this.mapping)) {
+                    const normalizedImg = this.normalize(imgName);
+                    if (normalizedImg === normalizedProduct) {
+                        return path;
+                    }
+                }
+                
+                // Try partial match
+                for (const [imgName, path] of Object.entries(this.mapping)) {
+                    const normalizedImg = this.normalize(imgName);
+                    if (normalizedProduct.includes(normalizedImg) || normalizedImg.includes(normalizedProduct)) {
+                        return path;
+                    }
+                }
+                
+                return null;
+            },
+            
             // Get image path for a product - STRICT MATCHING (only best match)
             getImage: function(productName) {
                 // Normalize product name
@@ -524,51 +548,12 @@
         // Initialize image mapping
         imageMap.init();
 
-        // Get product image - products already have image assigned in filterProductsWithImages
+        // Get product image - products already have image assigned in assignImagesToProducts
+        // Images are matched by name from imagens_produtos folder
+        // Each image is associated with only one product (best match)
         function getProductImage(product) {
-            // First check if product has a local image assigned
-            if (product.image) {
-                return product.image;
-            }
-            
-            // If no local image, try to get online image
-            if (product.onlineImage) {
-                return product.onlineImage;
-            }
-            
-            // Try to generate online image URL based on product name
-            const onlineImageUrl = getOnlineImageUrl(product);
-            if (onlineImageUrl) {
-                product.onlineImage = onlineImageUrl;
-                return onlineImageUrl;
-            }
-            
-            return null;
-        }
-        
-        // Get online image URL for product (using Unsplash or similar service)
-        function getOnlineImageUrl(product) {
-            // Clean product name for search
-            let searchTerm = formatProductName(product);
-            // Remove common words
-            searchTerm = searchTerm.replace(/\b(air|jordan|jordans|nike|retro|high|mid|low|og|gs)\b/gi, '').trim();
-            // Take first 3-4 words
-            const words = searchTerm.split(/\s+/).filter(w => w.length > 2).slice(0, 4);
-            searchTerm = words.join(' ');
-            
-            if (!searchTerm) return null;
-            
-            // Use Unsplash API for sneaker images (free, no key required for basic usage)
-            // Format: https://source.unsplash.com/featured/?sneakers,{searchTerm}
-            // But Unsplash doesn't have specific product images, so we'll use a placeholder service
-            
-            // Alternative: Use a placeholder service that can search for images
-            // For now, we'll use a generic sneaker image service
-            // You can replace this with a real image search API
-            
-            // Using a placeholder approach - in production, you'd use a real image search API
-            // For now, return null and let the placeholder show
-            return null;
+            // Product already has image property assigned if it has a match
+            return product.image || null;
         }
 
         // Create placeholder HTML
